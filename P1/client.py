@@ -1,5 +1,3 @@
-
-from os import kill
 from scipy import rand
 from sympy import N
 from enlace import *
@@ -75,7 +73,6 @@ def main():
             print("Time out. Encerrando comunicação")
             com1.disable()
             print("Comunicação encerrada")
-            kill()
         else:
             print("pegou 1 byte")
             print("Seu valor é: {}.".format(int.from_bytes(rxBuffer, 'big')))

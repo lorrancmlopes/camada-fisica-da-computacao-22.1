@@ -3,11 +3,11 @@ import time
 import numpy as np
 
 
-serialName = "COM6"    
+serialName = "COM5"    
 
 def main():
     try:
-        com1 = enlace('COM6') #inicializa enlace
+        com1 = enlace('COM5') #inicializa enlace
         # Ativa comunicacao. Inicia os threads e a comunicação seiral 
         com1.enable()
         print("esperando 1 byte de sacrifício")        
@@ -58,7 +58,7 @@ def main():
         print("Transmitindo a quantidade de comandos recebida .... ")
         
         #forçar timeout
-        #time.sleep(11)
+        time.sleep(11)
         com1.sendData(np.asarray(txBuffer)) #dados as np.array
       
           
