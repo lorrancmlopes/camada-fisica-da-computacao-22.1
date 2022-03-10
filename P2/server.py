@@ -29,24 +29,31 @@ def main():
             tipo = int.from_bytes(rxBuffer[0:2], 'big')
             numeroPacote = int.from_bytes(rxBuffer[2:4], 'big')
             totalPacotes = int.from_bytes(rxBuffer[4:6], 'big')
+            print(numeroPacote,totalPacotes)
             pacote = rxBuffer
-            print(pacote, len(pacote))
+            # print(pacote, len(pacote))
                 # Transmite pacote
             txBuffer = pacote
-            print(f"Envianado pacote de conferencia")
+            print(f"Enviando pacote de conferencia")
             com1.sendData(np.asarray(txBuffer)) #dados as np.array
             time.sleep(0.05)
 
             while numeroPacote <= totalPacotes:
-                rxBuffer, nRx = com1.getData(14+114) #máximo permitido, head+payload+eop
-                time.sleep(.01)
-                header = rxBuffer[:10]
-                payLoad = rxBuffer[10:124]
-                eop = rxBuffer[124:]
+                rxBufferHeader, nRx = com1.getData(10) #máximo permitido, head+payload+eop
+                time.sleep(0.05)
+                rxBufferPayLoad, nRx = com1.getData(114) #máximo permitido, head+payload+eop
+                time.sleep(0.05)
+                eop, nRx = com1.getData(4)
+                # print(rxBuffer)
+                # header = rxBuffer[:10]
+                # payLoad = rxBuffer[10:124]
+            
                 eop= int.from_bytes(eop, 'big')
+                print(rxBufferHeader, rxBufferPayLoad, eop)
                 tipo = int.from_bytes(rxBuffer[0:2], 'big')
-                numeroPacoteRecebido = int.from_bytes(header[2:4], 'big')
-                totalPacotesRecebido = int.from_bytes(header[4:6], 'big')
+                numeroPacoteRecebido = int.from_bytes(rxBufferHeader[2:4], 'big')
+                totalPacotesRecebido = int.from_bytes(rxBufferHeader[4:6], 'big')
+                print(f"Número pacote recebido: {numeroPacoteRecebido}. Numero pacote + 1: {(numeroPacote+1)}")
                 if numeroPacoteRecebido == (numeroPacote+1):
                     print("sequência ok")
                     if eop == 2022:
@@ -57,7 +64,6 @@ def main():
                 else:
                     print("Sequencia incorreta")
                 
-                pass
                 
         print("Olhe o client.py")
         time.sleep(10)

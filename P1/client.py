@@ -6,7 +6,7 @@ import numpy as np
 import random
 import sys # para pegar o tamanho em bytes
 
-serialName = "COM5"                  # Windows(variacao de)
+serialName = "COM3"                  # Windows(variacao de)
 
 
 def main():
@@ -14,7 +14,7 @@ def main():
         #declaramos um objeto do tipo enlace com o nome "com". Essa é a camada inferior à aplicação. Observe que um parametro
         #para declarar esse objeto é o nome da porta.
         
-        com1 = enlace('COM5') #inicializa enlace
+        com1 = enlace('COM3') #inicializa enlace
         
         
     
