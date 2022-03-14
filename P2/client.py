@@ -25,7 +25,7 @@ def main():
         com1.enable()
 
         #endereço da imagem a ser transmitida
-        imageR = "img/smallImage2.jpg"
+        imageR = "img/smallImage1.png"
         print("Carregando imagem para transmissão: ")
         print("-{}".format(imageR))
         print("-----------------")
