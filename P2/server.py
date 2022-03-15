@@ -6,7 +6,7 @@ import time
 import numpy as np
 
 
-serialName = "COM6"    
+serialName = "COM8"    
 
 def main():
     try:
@@ -23,7 +23,7 @@ def main():
         HOUVE_ERRO = {}
         arquivo = []
         totalPacotesRecebido = 0
-        com1 = enlace('COM6') #inicializa enlace
+        com1 = enlace('COM8') #inicializa enlace
         # Ativa comunicacao. Inicia os threads e a comunicação seiral 
         com1.enable()
         print("Esperando handshake")
@@ -79,27 +79,27 @@ def main():
                 
                 '''Faça uma simulação onde o tamanho real do payload de um pacote não corresponde ao informado no 
                 head. Mostre a resposta do servidor. '''
-                # nominalSize = int.from_bytes(rxBufferHeader[6:8], 'big')
-                # realSize = len(rxBufferPayLoad)
-                # if numeroPacoteRecebido == 3:
-                #     realSize = -2
+                nominalSize = int.from_bytes(rxBufferHeader[6:8], 'big')
+                realSize = len(rxBufferPayLoad)
+                if numeroPacoteRecebido == 3:
+                    realSize = -2
 
-                # if nominalSize != realSize:
-                #     print("ERRO: Tamanho informado não confere. Solicitando reenvio:")
-                #     #trabalhar aqui____________________________________
-                #     tamanhoPayload = 0
-                #     pacote = [codigoReenvio.to_bytes(2,'big'), numeroPacote.to_bytes(2,'big'), totalPacotes.to_bytes(2,'big'),tamanhoPayload.to_bytes(2,'big'), origem.to_bytes(1,'big'), destino.to_bytes(1,'big'), eop.to_bytes(4, 'big')]
-                #     txBuffer=b''.join(pacote)
-                #     print(f"Pacote dizendo 'Pedido Reenvio': {txBuffer}. Tamanho em bytes: {len(txBuffer)}")
-                #     com1.sendData(np.asarray(txBuffer)) #dados as np.array
-                #     time.sleep(0.01)
-                #     totalPacotes += 1
-                #     totalPacotesRecebido += 1
+                if nominalSize != realSize:
+                    print("ERRO: Tamanho informado não confere. Solicitando reenvio:")
+                    #trabalhar aqui____________________________________
+                    tamanhoPayload = 0
+                    pacote = [codigoReenvio.to_bytes(2,'big'), numeroPacote.to_bytes(2,'big'), totalPacotes.to_bytes(2,'big'),tamanhoPayload.to_bytes(2,'big'), origem.to_bytes(1,'big'), destino.to_bytes(1,'big'), eop.to_bytes(4, 'big')]
+                    txBuffer=b''.join(pacote)
+                    print(f"Pacote dizendo 'Pedido Reenvio': {txBuffer}. Tamanho em bytes: {len(txBuffer)}")
+                    com1.sendData(np.asarray(txBuffer)) #dados as np.array
+                    time.sleep(0.01)
+                    totalPacotes += 1
+                    #totalPacotesRecebido += 1
                     
                     
-                #     if int.from_bytes(rxBufferHeader[2:4], 'big') == totalPacotes:
-                #         print("\n\n------------FINALIZANDO---------------")
-                #         GET = False
+                    if int.from_bytes(rxBufferHeader[2:4], 'big') == totalPacotes:
+                        print("\n\n------------FINALIZANDO---------------")
+                        GET = False
                     
 
                 

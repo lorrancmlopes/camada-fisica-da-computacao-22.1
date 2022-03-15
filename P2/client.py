@@ -11,7 +11,7 @@ import numpy as np
 import random
 import sys # para pegar o tamanho em bytes
 
-serialName = "COM5"                  # Windows(variacao de)
+serialName = 'COM5'                  # Windows(variacao de)
 
 
 
@@ -25,7 +25,7 @@ def main():
         com1.enable()
 
         #endereço da imagem a ser transmitida
-        imageR = "img/smallImage2.jpg"
+        imageR = "img/smallImage1.png"
         print("Carregando imagem para transmissão: ")
         print("-{}".format(imageR))
         print("-----------------")
