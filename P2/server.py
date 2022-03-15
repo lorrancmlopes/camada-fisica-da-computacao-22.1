@@ -44,40 +44,40 @@ def main():
             txBuffer = pacote
             print(f"Enviando pacote de conferencia")
             com1.sendData(np.asarray(txBuffer)) #dados as np.array
-            time.sleep(1)            
-            while numeroPacote <= totalPacotes:
-                rxBufferHeader, nRx = com1.getData(10) #máximo permitido, head+payload+eop
-                time.sleep(0.05)
-                rxBufferPayLoad, nRx = com1.getData(114) #máximo permitido, head+payload+eop
-                time.sleep(0.05)
-                eop, nRx = com1.getData(4)
-                time.sleep(0.05)
-                print(f"header {rxBufferHeader}, payload {rxBufferPayLoad}, eop {eop}")
-                print(f"Tamanho payload: {int.from_bytes(rxBufferHeader[6:8], 'big')}")
-                # print(rxBuffer)
-                # header = rxBuffer[:10]
-                # payLoad = rxBuffer[10:124]
-                eop= int.from_bytes(eop, 'big')
+            time.sleep(0.05)            
+        while numeroPacote <= totalPacotes:
+            rxBufferHeader, nRx = com1.getData(10) #máximo permitido, head+payload+eop
+            time.sleep(0.05)
+            rxBufferPayLoad, nRx = com1.getData(114) #máximo permitido, head+payload+eop
+            time.sleep(0.05)
+            eop, nRx = com1.getData(4)
+            time.sleep(0.05)
+            print(f"header {rxBufferHeader}, payload {rxBufferPayLoad}, eop {eop}")
+            print(f"Tamanho payload: {int.from_bytes(rxBufferHeader[6:8], 'big')}")
+            # print(rxBuffer)
+            # header = rxBuffer[:10]
+            # payLoad = rxBuffer[10:124]
+            eop= int.from_bytes(eop, 'big')
 
-                tipo = int.from_bytes(rxBuffer[0:2], 'big')
-                numeroPacoteRecebido = int.from_bytes(rxBufferHeader[2:4], 'big')
-                # totalPacotesRecebido = int.from_bytes(rxBufferHeader[4:6], 'big')
-                print(f"Número pacote recebido: {numeroPacoteRecebido} (ou em bytes {rxBufferHeader[2:4]}). Numero pacote esperado: {(numeroPacote+1)}")
-                if numeroPacoteRecebido == (totalPacotesRecebido+1):
-                    print("sequência ok")
-                    if eop == 2022:
-                        print("EOP no lugar correto.")
-                        print("Avisando o client que está ok")
-                        totalPacotesRecebido += 1
-                        #trabalhar aqui____________________________________
-                        # tamanhoPayload = 0
-                        # pacote = [codigoOk.to_bytes(2,'big'), numeroPacote.to_bytes(2,'big'), totalPacotes.to_bytes(2,'big'),tamanhoPayload.to_bytes(2,'big'), origem.to_bytes(1,'big'), destino.to_bytes(1,'big'), eop.to_bytes(4, 'big')]
-                        # txBuffer=b''.join(pacote)
-                        # com1.sendData(np.asarray(txBuffer)) #dados as np.array
-                        # time.sleep(1)
+            tipo = int.from_bytes(rxBuffer[0:2], 'big')
+            numeroPacoteRecebido = int.from_bytes(rxBufferHeader[2:4], 'big')
+            # totalPacotesRecebido = int.from_bytes(rxBufferHeader[4:6], 'big')
+            print(f"Número pacote recebido: {numeroPacoteRecebido} (ou em bytes {rxBufferHeader[2:4]}). Numero pacote esperado: {(numeroPacote+1)}")
+            if numeroPacoteRecebido == (totalPacotesRecebido+1):
+                print("sequência ok")
+                if eop == 2022:
+                    print("EOP no lugar correto.")
+                    print("Avisando o client que está ok")
+                    totalPacotesRecebido += 1
+                    #trabalhar aqui____________________________________
+                    # tamanhoPayload = 0
+                    # pacote = [codigoOk.to_bytes(2,'big'), numeroPacote.to_bytes(2,'big'), totalPacotes.to_bytes(2,'big'),tamanhoPayload.to_bytes(2,'big'), origem.to_bytes(1,'big'), destino.to_bytes(1,'big'), eop.to_bytes(4, 'big')]
+                    # txBuffer=b''.join(pacote)
+                    # com1.sendData(np.asarray(txBuffer)) #dados as np.array
+                    # time.sleep(1)
 
-                else:
-                    print("Sequencia incorreta")
+            else:
+                print("Sequencia incorreta")
                 
                 
         print("Olhe o client.py")
