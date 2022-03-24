@@ -11,16 +11,16 @@ import numpy as np
 import random
 import sys # para pegar o tamanho em bytes
 
-serialName = 'COM5'                  # Windows(variacao de)
+serialName = 'COM4'                  # Windows(variacao de)
 
 
 
 def main():
     try:
-        #declaramos um objeto do tipo enlace com o nome "com". Essa é a camada inferior à aplicação. Observe que um parametro
+        #declaramos um objeto do h0 enlace com o nome "com". Essa é a camada inferior à aplicação. Observe que um parametro
         #para declarar esse objeto é o nome da porta.
         
-        com1 = enlace('COM5') #inicializa enlace
+        com1 = enlace('COM4') #inicializa enlace
         # Ativa comunicacao. Inicia os threads e a comunicação seiral 
         com1.enable()
 
@@ -36,8 +36,8 @@ def main():
         quantidade +=1 # um pacote a mais para o handshake
         
         #contrução do head
-        tipo, numeroPacote, totalPacotes, tamanhoPayload, origem, destino = None, None, None, None, None, None
-        EOP = 2022 #vou deixar um número qualquer por enquanto
+        h0,h1, h2, h3, h4, h5, h6, h7, h8, h9 = None, None, None, None, None, None, None, None, None, None
+        EOP = [b'\xAA', b'\xBB', b'\xCC', b'\xDD']
         recebimentoOK = 2
         recebimentoOK = recebimentoOK.to_bytes(2,'big')
         pedidoReenvio = 3
@@ -46,17 +46,24 @@ def main():
         #handShake
         HANDSHAKE = True
         FIM = False
-        tipo  = 0
-        tipo = tipo.to_bytes(2, 'big')
-        totalPacotes = quantidade.to_bytes(2, 'big')
-        tamanhoPayload = 0
-        tamanhoPayload = tamanhoPayload.to_bytes(2, 'big')
+        h0  = 0
+        h0 = h0.to_bytes(1, 'big')                            # h0 de mensagem
+        h1, h2 = 1, 1                                           # livre
+        h1, h2 = h1.to_bytes(1,'big'), h2.to_bytes(1, 'big')    # número total de pacotes no arquivos
+        h3 = quantidade.to_bytes(1, 'big')                      # 
+        h4 = h4.to_bytes('1', 'big')                            # número do pacote sendo enviado
+        h5 = h5.to_bytes('1', 'big')                            # h0 handshake = id do arquivo, h0 dados = tamanho payload
+        h6 = h6.to_bytes('1', 'big')                            # pacote solicitado quando tem erro
+        h7 = h7.to_bytes('1', 'big')                            # último pacote recebido com sucesso
+        h8 = h8.to_bytes('1', 'big')                            # CRC
+        h9 = h9.to_bytes('1', 'big')                            # CRC
+       
+        PAYLOAD = 0
+
         #print(f"tamanho payload: {tamanhoPayload}")
-        origem, destino, numeroPacote = 1, 1, 1
-        origem, destino = origem.to_bytes(1, "big"), destino.to_bytes(1, "big")
-        EOP = 2022
-        EOP = EOP.to_bytes(4, 'big')
-        pacoteHandshake = [tipo, numeroPacote.to_bytes(2, "big"), totalPacotes, tamanhoPayload, origem, destino, EOP]
+        EOP = [b'\xAA', b'\xBB', b'\xCC', b'\xDD']
+        HEAD = [h0,h1, h2, h3, h4, h5, h6, h7, h8, h9]
+        pacoteHandshake = HEAD + PAYLOAD + EOP
         #print('pacote handshake')
         #print(pacoteHandshake)
 
@@ -66,10 +73,10 @@ def main():
         
         
         while HANDSHAKE:
-            tentarNovamente = None
+            tentarNovamente = 0
             # Transmite dados
             print("Solicitando conexão com o server .... ")
-            print(int.from_bytes(txBuffer[:2], 'big'))
+            print(int.from_bytes(txBuffer[:1], 'big'))
             #print(f"txBuffer: {txBuffer}")
             #print(f"Len do txbuffer: {len(txBuffer)}")
 
@@ -93,6 +100,7 @@ def main():
             elif int((str(rxBuffer).split("\\"))[1][1:]+(str(rxBuffer).split("\\"))[2][1:], 16) == 0: #se os 2 primeiros bytes tem o valor 0, indica q é handshake
                 print("Comunicação bem sucedida! (HANDSHAKE)")
                 HANDSHAKE = False
+                
         if not FIM:
             print("---------------------")
             print("Início do envio do arquivo: \n")
@@ -101,30 +109,33 @@ def main():
 
             time.sleep(1)
 
-            while numeroPacote < int.from_bytes(totalPacotes, 'big'):
+            while h4 < int.from_bytes(h3, 'big'):
                 print("entrouuuuuuu")
-                pacoteHandshake = [tipo, numeroPacote, totalPacotes, tamanhoPayload, origem, destino, EOP]
-                tipo = 0
-                numeroPacote  += 1
-                print(f"Numero do pacote: {numeroPacote}")
+                h0 = 0
+                h4  += 1
+                print(f"Numero do pacote: {h4}")
                 tamanhoPayload = 114 # 114 bytes (maximo possível)
-                if numeroPacote == int.from_bytes(totalPacotes, 'big'):
+                
+                if h4 == int.from_bytes(h3, 'big'):
                     print("+++++++++++++++++++++++++++++++++")
                     print("Último pacote!")
-                    payLoad = data[fatiamentoInicial:]
-                    print(f"Len do último PayLoad: {len(payLoad)}")
-                    tamanhoPayload = len(payLoad)
+                    PAYLOAD = data[fatiamentoInicial:]
+                    print(f"Len do último PayLoad: {len(PAYLOAD)}")
+                    tamanhoPayload = len(PAYLOAD)
 
-                    #muito crtl c + crtl v aqui agr
                 else:
-                    payLoad = data[fatiamentoInicial:fatiamentoFinal]
+                    PAYLOAD = data[fatiamentoInicial:fatiamentoFinal]
+
                 fatiamentoInicial += 114
                 fatiamentoFinal += 114
-                pacote = [tipo.to_bytes(2,'big'), numeroPacote.to_bytes(2, "big"), totalPacotes, tamanhoPayload.to_bytes(2, 'big'), origem, destino, payLoad, EOP]
-                    # Transmite pacote
+                HEAD = [h0, h1, h2, h3, h4, h5, h6, h7, h8, h9]
+                pacote = HEAD + PAYLOAD + EOP
+                
+                # Transmite pacote
                 txBuffer=b''.join(pacote)
-                print(f"Tamanho do payload: {int.from_bytes(txBuffer[6:8], 'big')}")
-                print(f"Enviando pacote n° {numeroPacote} de {int.from_bytes(totalPacotes, 'big')} ... ")
+                
+                print(f"Tamanho do payload: {int.from_bytes(txBuffer[5], 'big')}")
+                print(f"Enviando pacote n° {h4} de {int.from_bytes(h3, 'big')} ... ")
                 print("##################################")
                 print(f'tamanho pacote len(txbuffer): {len(txBuffer)} txBuffer {txBuffer}')
 
@@ -135,15 +146,15 @@ def main():
                 
                 rxBuffer, nRx = com1.getData(14)
                 time.sleep(0.03)
-                tipo = rxBuffer[:2]
-                print(f"Tipo: {int.from_bytes(tipo, 'big')}; Recebimento ok: {int.from_bytes(recebimentoOK, 'big')} \n")
-                if tipo == recebimentoOK:
+                h0 = rxBuffer[0]
+                print(f"Tipo: {int.from_bytes(h0, 'big')}; Recebimento ok: {int.from_bytes(recebimentoOK, 'big')} \n")
+                if h0 == recebimentoOK:
                     print("Código de recebimento ok")
-                elif tipo == pedidoReenvio:
+                elif h0 == pedidoReenvio:
                     print("Reenvio")
-                    totalPacotes = int.from_bytes(totalPacotes, 'big')
-                    totalPacotes += 1
-                    totalPacotes = totalPacotes.to_bytes(2,'big')
+                    h3 = int.from_bytes(h3, 'big')
+                    h3 += 1
+                    h3 = h3.to_bytes(2,'big')
                     fatiamentoInicial -= 114
                     fatiamentoFinal -= 114
                         
