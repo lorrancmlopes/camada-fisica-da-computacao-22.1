@@ -9,17 +9,13 @@ import sys # para pegar o tamanho em bytes
 
 serialName = 'COM5'                  # Windows(variacao de)
 
-
-
 def main():
     try:
         #declaramos um objeto do tipo enlace com o nome "com". Essa é a camada inferior à aplicação. Observe que um parametro
         #para declarar esse objeto é o nome da porta.
-        
         com1 = enlace('COM5') #inicializa enlace
         # Ativa comunicacao. Inicia os threads e a comunicação seiral 
         com1.enable()
-
         #endereço da imagem a ser transmitida
         imageR = "img\smallImage2.jpg" #"C:\Users\lorra\OneDrive\Área de Trabalho\22.1\Camada\Projeto 2\camada-fisica-da-computacao-22.1\P4\Client\img\smallImage1.png"
         log = "./log/Client1.txt" 
@@ -235,41 +231,6 @@ def main():
                     # timer20 = time.time()
                     ATUALIZATIMER20 = True
                     print("Corrige timer")
-                # elif rxBuffer != [-7]: # timer2 < 20s
-                #     rxBuffer, nRx = com1.getData(14, timer20)
-                #     print("fiz um getData")
-                #     tipo = rxBuffer[:1]
-                #     # print(f"Tipo: {int.from_bytes(tipo, 'big')} \n")
-                #     print(f"Tipo: {tipo} \n")
-                #     print(tipo == tipo6)
-                #     if tipo == tipo6:
-                #         print("Código de ERRO recebimento pacote.\n")
-                #         numPacoteReenvio =int.from_bytes(rxBuffer[6], 'big')
-                #         print(f"Enviar arquivo a partir do pacote n° {numPacoteReenvio}.")
-                #         print("AQUIIII 00")
-                #         fatiamentoInicial = (numPacoteReenvio-1)*114
-                #         print("AQUIIII 11")
-                #         fatiamentoFinal = (numPacoteReenvio)*114 
-                #         print("Corrige contador")
-                #         #h4 = numPacoteReenvio-1
-                #         #CONT = numPacoteReenvio
-                #         #h4 = h4.to_bytes(1,'big')
-                #         timer20 = time.time()
-                #         print("Corrige timer")
-                
-                # else:
-                #     print("Timed out")
-                #     h0 = tipo5.to_bytes(1, 'big')
-                #     HEAD = [h0, h1, h2, h3, h4, h5, h6, h7, h8, h9]
-                #     pacote = HEAD + EOP
-                #         # Transmite pacote
-                #     txBuffer=b''.join(pacote)
-                #     print(f"Tamanho do payload: {int.from_bytes(txBuffer[5], 'big')}")
-                #     print(f"Enviando pacote de timed out 'tipo6' ... ")
-                #     com1.sendData(np.asarray(txBuffer)) #dados as np.array
-                #     time.sleep(0.01)
-                #     com1.disable()
-                #     break  
 
                 elif rxBuffer == [-7]: # significa que t > 20s
                     print("Timed out")
@@ -287,7 +248,7 @@ def main():
             
             f = open(log, 'w')
             f.write(logString)
-            #Fecha arquivo de imagem
+            #Fecha arquivo de texto
             f.close()
 
                 # Encerra comunicação
@@ -300,8 +261,7 @@ def main():
         print("ops! :-\\")
         print(erro)
         com1.disable()
-        
-
+    
     #so roda o main quando for executado do terminal ... se for chamado dentro de outro modulo nao roda
 if __name__ == "__main__":
     main()
