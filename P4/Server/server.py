@@ -1,6 +1,3 @@
-from email import header
-
-from sklearn.metrics import top_k_accuracy_score
 from enlace import *
 import time
 import numpy as np
@@ -30,14 +27,14 @@ def main():
         # Ativa comunicacao. Inicia os threads e a comunicação seiral 
         com1.enable()
         print("Esperando handshake")
-    
-        time.sleep(.5)        
+       
         
         while ocioso:
-            rxBuffer, nRx = com1.getData(14) # pega handshake
-            time.sleep(.01)
+            timer20 = time.time() # só por necessidade
+            rxBuffer, nRx = com1.getData(14, timer20) # pega handshake
+            print(f"Rxbuffer: {rxBuffer}")
 
-            if len(rxBuffer) != 0:
+            if len(rxBuffer) != 0 and rxBuffer != [-5]:
                 # totalPacotesRecebido += 1
                 print("Abrindo o pacote para ver se o tipo é 0 (handshake)")
                 #if int.from_bytes(rxBuffer[0], 'big') == tipo1:
@@ -50,6 +47,7 @@ def main():
                         time.sleep(1)
                     else:
                         time.sleep(1)
+            time.sleep(1)
 
         print("Tipo handshake. Extraindo informações sobre a quantidade de pacotes.")
         # pacoteHandshake = [tipo, numeroPacote, totalPacotes, tamanhoPayload, origem, destino, EOP]
@@ -77,15 +75,15 @@ def main():
         txBuffer = b''.join(pacote)
         print(f"Enviando pacote de conferencia: {txBuffer}. Seu tamanho é {len(txBuffer)}")
         com1.sendData(np.asarray(txBuffer)) #dados as np.array
-        time.sleep(0.05)            
+        ATUALIZATIMER20 = True
+        SUCESSO = False            
         while GET:
             bytesGetData = 114
             print("-------------LOOP-----------")
-            rxBufferHeader, nRx = com1.getData(10) #máximo permitido, head+payload+eop
-            time.sleep(0.05)
-            timer1 = time.time()
-            timer2 = time.time()
-            print(f"rxBuffer: {rxBuffer}")
+            if ATUALIZATIMER20:
+                timer20 = time.time()
+            rxBufferHeader, nRx = com1.getData(10, timer20) 
+            print(f"rxBuffer: {rxBufferHeader}")
             print(f"Tipo da msg recebida: tipo {rxBufferHeader[0]}")
             
             if rxBufferHeader[0] == tipo3:
@@ -100,9 +98,9 @@ def main():
                     # bytesGetData = int.from_bytes(rxBufferHeader[6:8],'big')
                     bytesGetData = rxBufferHeader[5]
                     print(f"Estamos pegando {bytesGetData} no GetData!")
-                rxBufferPayLoad, nRx = com1.getData(bytesGetData) 
+                rxBufferPayLoad, nRx = com1.getData(bytesGetData, timer20) 
                 time.sleep(0.5) #era 1 s
-                eop, nRx = com1.getData(4)
+                eop, nRx = com1.getData(4, timer20)
                 time.sleep(0.05)
                 eop= int.from_bytes(eop, 'big')
                 print(f"EOP: {eop}")
@@ -118,6 +116,7 @@ def main():
                 realSize = len(rxBufferPayLoad)
 
                 if nominalSize != realSize:
+                    ATUALIZATIMER20 = False
                     print("ERRO: Tamanho informado não confere. Solicitando reenvio:")
                     #trabalhar aqui____________________________________
                     tamanhoPayload = 0
@@ -141,6 +140,8 @@ def main():
                     if eop == 2864434397:
                         print("EOP no lugar correto.")
                         print("Avisando o client que está ok")
+                        ATUALIZATIMER20 = True
+                        #timer20 = time.time()
                         bytesImagem.append(rxBufferPayLoad)
                         totalPacotesRecebido += 1
 
@@ -150,12 +151,13 @@ def main():
                         txBuffer=b''.join(pacote)
                         #print(f"Pacote dizendo 'Recebimento OK': {txBuffer}. Tamanho em bytes: {len(txBuffer)}")
                         com1.sendData(np.asarray(txBuffer)) #dados as np.array
-                        time.sleep(0.01)
                         if numeroPacoteRecebido == totalPacotes:
                             print("\n\n------------FINALIZANDO---------------")
                             GET = False
+                            SUCESSO = True
 
                 else:
+                    ATUALIZATIMER20 = False
                     print("Sequencia incorreta")
                     #trabalhar aqui____________________________________
                     tamanhoPayload = 0
@@ -173,12 +175,17 @@ def main():
                     if numeroPacoteRecebido == totalPacotes:
                         print("\n\n------------FINALIZANDO---------------")
                         GET = False
-            else: 
+            else:
+                ATUALIZATIMER20 = False 
                 print("sleep 1s")
+                print("Aqui")
                 time.sleep(1)
-                #com1.rx.clearBuffer()
+                com1.rx.clearBuffer()
                 #totalPacotesRecebido -= 1 # mudei 21/03
-                if time.time()-timer2 > 20 and com1.rx.getBufferLen!=144:
+                rxBuffer, n = com1.getData(10, timer20)
+                print(f'rxbuffer: {rxBuffer}')
+                print("chegou aqui")
+                if rxBuffer == [-7]: # t> 20s
                     ocioso = True
                     print("Timed out")
                     h0 = tipo5.to_bytes(1, 'big')
@@ -186,32 +193,31 @@ def main():
                     pacote = HEAD + EOP
                         # Transmite pacote
                     txBuffer=b''.join(pacote)
-                    print(f"Tamanho do payload: {int.from_bytes(txBuffer[5], 'big')}")
+                    print(f"Tamanho do payload: {txBuffer[5]}")
                     print(f"Enviando pacote de timed out 'tipo6' ... ")
                     com1.sendData(np.asarray(txBuffer)) #dados as np.array
                     time.sleep(0.01)
                     com1.disable()
                     break
                 else:
-                    if time.time()-timer1 >2:
+                    ATUALIZATIMER20 = False
+                    if rxBuffer == [-5]:
                         tamanhoPayload = 0
                         HEAD = [tipo4.to_bytes(1,'big'), h1, h2, totalPacotesRecebido.to_bytes(1, 'big'), numeroPacote.to_bytes(1,'big'), tamanhoPayload.to_bytes(1,'big'),h6,h7,h8,h9]
                         pacote = HEAD + EOP
                         txBuffer=b''.join(pacote)
                         #print(f"Pacote dizendo 'Recebimento OK': {txBuffer}. Tamanho em bytes: {len(txBuffer)}")
                         com1.sendData(np.asarray(txBuffer)) #dados as np.array
-                        time.sleep(0.01)
-                        timer1 = time.time()
-            com1.rx.clearBuffer()             
+            #com1.rx.clearBuffer()             
                 
 
-        
-        bytesImagem =b''.join(bytesImagem)
-        f = open(imageW, 'wb')
-        f.write(bytesImagem)
-        #Fecha arquivo de imagem
-        f.close()
-        print("\n\n SUCESSO NA TRANSMISSÃO!")
+        if SUCESSO:
+            bytesImagem =b''.join(bytesImagem)
+            f = open(imageW, 'wb')
+            f.write(bytesImagem)
+            #Fecha arquivo de imagem
+            f.close()
+            print("\n\n SUCESSO NA TRANSMISSÃO!")
         # Encerra comunicação
         print("-------------------------")
         print("Comunicação encerrada")

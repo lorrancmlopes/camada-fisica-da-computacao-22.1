@@ -85,14 +85,18 @@ def main():
             com1.sendData(np.asarray(txBuffer)) #dados as np.array
             time.sleep(5)
             print("esperando resposta") 
+            timer20 = time.time()
               
-            rxBuffer, nRx = com1.getData(14)
+            rxBuffer, nRx = com1.getData(14, timer20)
             #print(f"rxbuffer: {rxBuffer}")
-
-            if int((str(rxBuffer).split("\\"))[1][1:]) == tipo2: #se o 1° byte tem o valor tipo 2, indica q é handshake bem feito
-                print("Comunicação bem sucedida! (HANDSHAKE)")
-                HANDSHAKE = False
-                CONT = 1
+            try:
+                if int((str(rxBuffer).split("\\"))[1][1:]) == tipo2: #se o 1° byte tem o valor tipo 2, indica q é handshake bem feito
+                    print("Comunicação bem sucedida! (HANDSHAKE)")
+                    HANDSHAKE = False
+                    ATUALIZATIMER20 = True
+                    CONT = 1
+            except:
+                pass
                 
         if not FIM:
 
@@ -103,7 +107,6 @@ def main():
             h0 = tipo3
             #h4 = int.from_bytes(h4, 'big')
             while int.from_bytes(h4, 'big') <= int.from_bytes(h3, 'big'):
-                print("entrouuuuuuu")
                 print(f"Numero do pacote: {int.from_bytes(h4, 'big')}")
                 print(f"Numero total: {int.from_bytes(h3, 'big')}")
                 
@@ -130,20 +133,21 @@ def main():
                 print("##################################")
                 print(f'tamanho pacote len(txbuffer): {len(txBuffer)}')
                 print(f"Tipo da msg a ser enviada: tipo{txBuffer[0]}")
-
+                
+                
                 com1.sendData(np.asarray(txBuffer)) #dados as np.array
                 print("envia msg cont - mdg t3")
-                timer1 = time.time() #set timer 1
-                timer2 = time.time() #set timer 2 (COLOCAR DENTRO DO enlaceTX)
+                #timer2 = time.time() #set timer 2 (COLOCAR DENTRO DO enlaceTX)
                 #Conferência de dados para envio do próximo pacote:
                 print("Conferindo..")
-                
-                rxBuffer, nRx = com1.getData(14)
+                if ATUALIZATIMER20:
+                    timer20 = time.time()
+                rxBuffer, nRx = com1.getData(14, timer20)
                 print("fez o getData")
                 
                 tipo = rxBuffer[0]
                 print(f"Tipo: {tipo}")
-                print(f"Timer 1: {time.time() - timer1}")
+
                 if tipo == tipo4:
                     print("Código de recebimento ok")
                     CONT += 1
@@ -152,33 +156,14 @@ def main():
                     h4 = h4.to_bytes(1, 'big')
                     fatiamentoInicial += 114
                     fatiamentoFinal += 114
-                    # recebimento ok tbm tem que ter o numero do ultimo pacote aferido pelo server
-                # elif tipo == pedidoReenvio:
-                #     print("Reenvio por pedido")
-                #     h3 = int.from_bytes(h3, 'big')
-                #     h3 += 1
-                #     h3 = h3.to_bytes(2,'big')
-                #     fatiamentoInicial -= 114
-                #     fatiamentoFinal -= 114
 
-                # elif tipo == tipo6:
-                #     print("Código de ERRO recebimento pacote.\n")
-                #     numPacoteReenvio = rxBuffer[6]
-                #     print(f"Enviar arquivo a partir do pacote n° {numPacoteReenvio}.")
-                #     fatiamentoInicial = (numPacoteReenvio-1)*114
-                #     fatiamentoFinal = (numPacoteReenvio)*114
-                #     h4 = numPacoteReenvio-1
-                #     h4 = h4.to_bytes(1,'big')
-                #     CONT = numPacoteReenvio
-                #     print("chegou aqui")
-
-                elif time.time()-timer1 >5:
+                elif rxBuffer == [-5]: # se o return for [-5], t > 5s
                     print("envia msg cont - msg t3")
                     com1.sendData(np.asarray(txBuffer)) #dados as np.array
-                    timer1 = time.time()
-                    print("restart timer1")
-                    print(f"Timer 2 está em: {time.time()-timer2}")
-                    if time.time()-timer2 >20 and com1.rx.getBufferLen() != 14: # teste 
+                    ATUALIZATIMER20 = False
+                    rxBuffer = com1.getData(14, timer20) #getData == restart timer1
+
+                    if rxBuffer == [-7]: # significa que t > 20s
                         print("Timed out")
                         h0 = tipo5.to_bytes(1, 'big')
                         HEAD = [h0, h1, h2, h3, h4, h5, h6, h7, h8, h9]
@@ -188,77 +173,102 @@ def main():
                         print(f"Tamanho do payload: {int.from_bytes(txBuffer[5], 'big')}")
                         print(f"Enviando pacote de timed out 'tipo6' ... ")
                         com1.sendData(np.asarray(txBuffer)) #dados as np.array
-                        time.sleep(0.01)
                         com1.disable()
                         break
                     else:
-                        print("ENTROU NO ELSE")
-                        rxBuffer, nRx = com1.getData(14)
+                        print("verifica se recebeu msg t6")
+                        rxBuffer, nRx = com1.getData(14, timer20)
                         print("fiz um getData")
                         tipo = rxBuffer[:1]
                         # print(f"Tipo: {int.from_bytes(tipo, 'big')} \n")
-                        print(tipo)
                         # print(f"Tipo: {int.from_bytes(tipo, 'big')} \n")
                         #print(int.from_bytes(tipo, 'big') == tipo6)
                         
-                        if rxBuffer != [-5]:
-                            if int.from_bytes(tipo, 'big'):
-                                print("Código de ERRO recebimento pacote.\n")
-                                print(rxBuffer[6])
-                                numPacoteReenvio =rxBuffer[6]
-                                print(f"Enviar arquivo a partir do pacote n° {numPacoteReenvio}.")
-                                print("AQUIIII 0")
-                                fatiamentoInicial = (numPacoteReenvio-1)*114 
-                                print("AQUIIII 1")
-                                fatiamentoFinal = (numPacoteReenvio)*114 
-                                print("Corrige contador")
-                                h4 = numPacoteReenvio
-                                #CONT = numPacoteReenvio
-                                h4 = h4.to_bytes(1,'big')
-                                print("AQUIIII")
-                                timer1 = time.time()
-                                timer2 = time.time()
-                                print("Corrige os timers")
-                        else:
-                            print("else: \n pass")
-                elif (time.time() - timer2) <= 20:
-                    rxBuffer, nRx = com1.getData(14)
-                    print("fiz um getData")
-                    tipo = rxBuffer[:1]
-                    # print(f"Tipo: {int.from_bytes(tipo, 'big')} \n")
-                    print(f"Tipo: {tipo} \n")
-                    print(tipo == tipo6)
-                    if tipo == tipo6:
-                        print("Código de ERRO recebimento pacote.\n")
-                        numPacoteReenvio =int.from_bytes(rxBuffer[6], 'big')
-                        print(f"Enviar arquivo a partir do pacote n° {numPacoteReenvio}.")
-                        print("AQUIIII 00")
-                        fatiamentoInicial = (numPacoteReenvio-1)*114
-                        print("AQUIIII 11")
-                        fatiamentoFinal = (numPacoteReenvio)*114 
-                        print("Corrige contador")
-                        #h4 = numPacoteReenvio-1
-                        #CONT = numPacoteReenvio
-                        #h4 = h4.to_bytes(1,'big')
-                        print("AQUIIII 22")
-                        timer1 = time.time()
-                        timer2 = time.time()
-                        print("Corrige os timers")
-                else:
-                    print("Timed out")
-                    h0 = tipo5.to_bytes(1, 'big')
-                    HEAD = [h0, h1, h2, h3, h4, h5, h6, h7, h8, h9]
-                    pacote = HEAD + EOP
-                        # Transmite pacote
-                    txBuffer=b''.join(pacote)
-                    print(f"Tamanho do payload: {int.from_bytes(txBuffer[5], 'big')}")
-                    print(f"Enviando pacote de timed out 'tipo6' ... ")
-                    com1.sendData(np.asarray(txBuffer)) #dados as np.array
-                    time.sleep(0.01)
-                    com1.disable()
-                    break  
+                        if rxBuffer[0] == tipo6:
+                            print("Código de ERRO recebimento pacote.\n")
+                            print(rxBuffer[6])
+                            numPacoteReenvio =rxBuffer[6]
+                            print(f"Enviar arquivo a partir do pacote n° {numPacoteReenvio}.")
+                            print("AQUIIII 0")
+                            fatiamentoInicial = (numPacoteReenvio-1)*114 
+                            print("AQUIIII 1")
+                            fatiamentoFinal = (numPacoteReenvio)*114 
+                            print("Corrige contador")
+                            h4 = numPacoteReenvio
+                            print(f"h4 agora é: {h4}")
+                            #CONT = numPacoteReenvio
+                            h4 = h4.to_bytes(1,'big')
+                            print("AQUIIII")
+                            ATUALIZATIMER20 = True
+                            # timer20 = time.time()
+                            print("Corrige timer")
 
+                elif rxBuffer[0] == tipo6:
+                            print("Código de ERRO recebimento pacote.\n")
+                            print(rxBuffer[6])
+                            numPacoteReenvio =rxBuffer[6]
+                            print(f"Enviar arquivo a partir do pacote n° {numPacoteReenvio}.")
+                            print("AQUIIII 0")
+                            fatiamentoInicial = (numPacoteReenvio-1)*114 
+                            print("AQUIIII 1")
+                            fatiamentoFinal = (numPacoteReenvio)*114 
+                            print("Corrige contador")
+                            h4 = numPacoteReenvio
+                            print(f"h4 agora é: {h4}")
+                            #CONT = numPacoteReenvio
+                            h4 = h4.to_bytes(1,'big')
+                            print("AQUIIII")
+                            # timer20 = time.time()
+                            ATUALIZATIMER20 = True
+                            print("Corrige timer")
+                # elif rxBuffer != [-7]: # timer2 < 20s
+                #     rxBuffer, nRx = com1.getData(14, timer20)
+                #     print("fiz um getData")
+                #     tipo = rxBuffer[:1]
+                #     # print(f"Tipo: {int.from_bytes(tipo, 'big')} \n")
+                #     print(f"Tipo: {tipo} \n")
+                #     print(tipo == tipo6)
+                #     if tipo == tipo6:
+                #         print("Código de ERRO recebimento pacote.\n")
+                #         numPacoteReenvio =int.from_bytes(rxBuffer[6], 'big')
+                #         print(f"Enviar arquivo a partir do pacote n° {numPacoteReenvio}.")
+                #         print("AQUIIII 00")
+                #         fatiamentoInicial = (numPacoteReenvio-1)*114
+                #         print("AQUIIII 11")
+                #         fatiamentoFinal = (numPacoteReenvio)*114 
+                #         print("Corrige contador")
+                #         #h4 = numPacoteReenvio-1
+                #         #CONT = numPacoteReenvio
+                #         #h4 = h4.to_bytes(1,'big')
+                #         timer20 = time.time()
+                #         print("Corrige timer")
+                
+                # else:
+                #     print("Timed out")
+                #     h0 = tipo5.to_bytes(1, 'big')
+                #     HEAD = [h0, h1, h2, h3, h4, h5, h6, h7, h8, h9]
+                #     pacote = HEAD + EOP
+                #         # Transmite pacote
+                #     txBuffer=b''.join(pacote)
+                #     print(f"Tamanho do payload: {int.from_bytes(txBuffer[5], 'big')}")
+                #     print(f"Enviando pacote de timed out 'tipo6' ... ")
+                #     com1.sendData(np.asarray(txBuffer)) #dados as np.array
+                #     time.sleep(0.01)
+                #     com1.disable()
+                #     break  
 
+                elif rxBuffer == [-7]: # significa que t > 20s
+                        print("Timed out")
+                        h0 = tipo5.to_bytes(1, 'big')
+                        HEAD = [h0, h1, h2, h3, h4, h5, h6, h7, h8, h9]
+                        pacote = HEAD + EOP
+                         # Transmite pacote
+                        txBuffer=b''.join(pacote)
+                        print(f"Tamanho do payload: {txBuffer[5]}")
+                        print(f"Enviando pacote de timed out 'tipo6' ... ")
+                        com1.sendData(np.asarray(txBuffer)) #dados as np.array
+                        com1.disable()
+                        break
                             
                 
                 # Encerra comunicação
