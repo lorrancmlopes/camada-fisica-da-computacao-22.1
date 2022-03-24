@@ -2,6 +2,7 @@
 from enlace import *
 from math import ceil
 import time
+from datetime import date, datetime
 import numpy as np
 import random
 import sys # para pegar o tamanho em bytes
@@ -21,6 +22,8 @@ def main():
 
         #endereço da imagem a ser transmitida
         imageR = "img\smallImage2.jpg" #"C:\Users\lorra\OneDrive\Área de Trabalho\22.1\Camada\Projeto 2\camada-fisica-da-computacao-22.1\P4\Client\img\smallImage1.png"
+        log = "./log/Client1.txt" 
+        logString = ""
         print("Carregando imagem para transmissão: ")
         print("-{}".format(imageR))
         print("-----------------")
@@ -84,6 +87,8 @@ def main():
             print("Solicitando conexão com o server .... ")
             com1.sendData(np.asarray(txBuffer)) #dados as np.array
             time.sleep(5)
+            logString  = f"{date.today()} {datetime.now().time()}/envio/{tipo1}/{len(txBuffer)}\n"
+            print(logString)
             print("esperando resposta") 
             timer20 = time.time()
               
@@ -91,10 +96,12 @@ def main():
             #print(f"rxbuffer: {rxBuffer}")
             try:
                 if int((str(rxBuffer).split("\\"))[1][1:]) == tipo2: #se o 1° byte tem o valor tipo 2, indica q é handshake bem feito
+                    logString  += f"{date.today()} {datetime.now().time()}/receb/{tipo2}/{len(rxBuffer)}\n"
                     print("Comunicação bem sucedida! (HANDSHAKE)")
                     HANDSHAKE = False
                     ATUALIZATIMER20 = True
                     CONT = 1
+
             except:
                 pass
                 
@@ -136,7 +143,8 @@ def main():
                 
                 
                 com1.sendData(np.asarray(txBuffer)) #dados as np.array
-                print("envia msg cont - mdg t3")
+                logString  += f"{date.today()} {datetime.now().time()}/envio/{tipo3}/{len(txBuffer)}/{int.from_bytes(h4, 'big')}/{int.from_bytes(h3, 'big')}/CRC\n"
+                print("envia msg cont - msg t3")
                 #timer2 = time.time() #set timer 2 (COLOCAR DENTRO DO enlaceTX)
                 #Conferência de dados para envio do próximo pacote:
                 print("Conferindo..")
@@ -149,6 +157,7 @@ def main():
                 print(f"Tipo: {tipo}")
 
                 if tipo == tipo4:
+                    logString  += f"{date.today()} {datetime.now().time()}/receb/{tipo4}/{len(txBuffer)}/CRC\n"
                     print("Código de recebimento ok")
                     CONT += 1
                     h4 = int.from_bytes(h4, 'big')
@@ -158,6 +167,7 @@ def main():
                     fatiamentoFinal += 114
 
                 elif rxBuffer == [-5]: # se o return for [-5], t > 5s
+                    logString  += f"{date.today()} {datetime.now().time()}/envio/{tipo3}/{len(txBuffer)}/{int.from_bytes(h4, 'big')}/{int.from_bytes(h3, 'big')}/CRC\n"
                     print("envia msg cont - msg t3")
                     com1.sendData(np.asarray(txBuffer)) #dados as np.array
                     ATUALIZATIMER20 = False
@@ -171,13 +181,15 @@ def main():
                          # Transmite pacote
                         txBuffer=b''.join(pacote)
                         print(f"Tamanho do payload: {int.from_bytes(txBuffer[5], 'big')}")
-                        print(f"Enviando pacote de timed out 'tipo6' ... ")
+                        print(f"Enviando pacote de timed out 'tipo5' ... ")
                         com1.sendData(np.asarray(txBuffer)) #dados as np.array
+                        logString  += f"{date.today()} {datetime.now().time()}/envio/{tipo5}/{len(txBuffer)}/{int.from_bytes(h4, 'big')}/{int.from_bytes(h3, 'big')}/CRC\n"
                         com1.disable()
                         break
                     else:
                         print("verifica se recebeu msg t6")
                         rxBuffer, nRx = com1.getData(14, timer20)
+                        
                         print("fiz um getData")
                         tipo = rxBuffer[:1]
                         # print(f"Tipo: {int.from_bytes(tipo, 'big')} \n")
@@ -185,6 +197,7 @@ def main():
                         #print(int.from_bytes(tipo, 'big') == tipo6)
                         
                         if rxBuffer[0] == tipo6:
+                            logString  += f"{date.today()} {datetime.now().time()}/receb/{tipo6}/{len(rxBuffer)}/CRC\n"
                             print("Código de ERRO recebimento pacote.\n")
                             print(rxBuffer[6])
                             numPacoteReenvio =rxBuffer[6]
@@ -204,23 +217,24 @@ def main():
                             print("Corrige timer")
 
                 elif rxBuffer[0] == tipo6:
-                            print("Código de ERRO recebimento pacote.\n")
-                            print(rxBuffer[6])
-                            numPacoteReenvio =rxBuffer[6]
-                            print(f"Enviar arquivo a partir do pacote n° {numPacoteReenvio}.")
-                            print("AQUIIII 0")
-                            fatiamentoInicial = (numPacoteReenvio-1)*114 
-                            print("AQUIIII 1")
-                            fatiamentoFinal = (numPacoteReenvio)*114 
-                            print("Corrige contador")
-                            h4 = numPacoteReenvio
-                            print(f"h4 agora é: {h4}")
-                            #CONT = numPacoteReenvio
-                            h4 = h4.to_bytes(1,'big')
-                            print("AQUIIII")
-                            # timer20 = time.time()
-                            ATUALIZATIMER20 = True
-                            print("Corrige timer")
+                    logString  += f"{date.today()} {datetime.now().time()}/receb/{tipo6}/{len(rxBuffer)}/CRC\n"
+                    print("Código de ERRO recebimento pacote.\n")
+                    print(rxBuffer[6])
+                    numPacoteReenvio =rxBuffer[6]
+                    print(f"Enviar arquivo a partir do pacote n° {numPacoteReenvio}.")
+                    print("AQUIIII 0")
+                    fatiamentoInicial = (numPacoteReenvio-1)*114 
+                    print("AQUIIII 1")
+                    fatiamentoFinal = (numPacoteReenvio)*114 
+                    print("Corrige contador")
+                    h4 = numPacoteReenvio
+                    print(f"h4 agora é: {h4}")
+                    #CONT = numPacoteReenvio
+                    h4 = h4.to_bytes(1,'big')
+                    print("AQUIIII")
+                    # timer20 = time.time()
+                    ATUALIZATIMER20 = True
+                    print("Corrige timer")
                 # elif rxBuffer != [-7]: # timer2 < 20s
                 #     rxBuffer, nRx = com1.getData(14, timer20)
                 #     print("fiz um getData")
@@ -258,19 +272,24 @@ def main():
                 #     break  
 
                 elif rxBuffer == [-7]: # significa que t > 20s
-                        print("Timed out")
-                        h0 = tipo5.to_bytes(1, 'big')
-                        HEAD = [h0, h1, h2, h3, h4, h5, h6, h7, h8, h9]
-                        pacote = HEAD + EOP
-                         # Transmite pacote
-                        txBuffer=b''.join(pacote)
-                        print(f"Tamanho do payload: {txBuffer[5]}")
-                        print(f"Enviando pacote de timed out 'tipo6' ... ")
-                        com1.sendData(np.asarray(txBuffer)) #dados as np.array
-                        com1.disable()
-                        break
-                            
-                
+                    print("Timed out")
+                    h0 = tipo5.to_bytes(1, 'big')
+                    HEAD = [h0, h1, h2, h3, h4, h5, h6, h7, h8, h9]
+                    pacote = HEAD + EOP
+                        # Transmite pacote
+                    txBuffer=b''.join(pacote)
+                    print(f"Tamanho do payload: {txBuffer[5]}")
+                    print(f"Enviando pacote de timed out 'tipo6' ... ")
+                    com1.sendData(np.asarray(txBuffer)) #dados as np.array
+                    logString  += f"{date.today()} {datetime.now().time()}/envio/{tipo5}/{len(txBuffer)}/{int.from_bytes(h4, 'big')}/{int.from_bytes(h3, 'big')}/CRC\n"
+                    com1.disable()
+                    break
+            
+            f = open(log, 'w')
+            f.write(logString)
+            #Fecha arquivo de imagem
+            f.close()
+
                 # Encerra comunicação
             print("-------------------------")
             print("Comunicação encerrada")
