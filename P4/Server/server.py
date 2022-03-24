@@ -4,7 +4,7 @@ import time
 import numpy as np
 from datetime import datetime, date
 
-serialName = "COM8"    
+serialName = "COM5"    
 
 def main():
     try:
@@ -25,7 +25,7 @@ def main():
         arquivo = []
         ocioso = True
         totalPacotesRecebido = 0
-        com1 = enlace('COM8') #inicializa enlace
+        com1 = enlace('COM5') #inicializa enlace
         # Ativa comunicacao. Inicia os threads e a comunicação seiral 
         com1.enable()
         print("Esperando handshake")
@@ -64,8 +64,8 @@ def main():
         h1, h2, h6, h7, h8, h9 = 1, 1, 0, 0, 0, 0                                           # livre
         h1, h2 = h1.to_bytes(1,'big'), h2.to_bytes(1, 'big')    # número total de pacotes no arquivos
         h3 = totalPacotes.to_bytes(1, 'big')                      # 
-        h4 = 1
-        h4 = h4.to_bytes(1, 'big')                            # número do pacote sendo enviado
+        h4 = 0
+        h4 = h4.to_bytes(0, 'big')                            # número do pacote sendo enviado
         h5 = rxBuffer[5].to_bytes(1, 'big') # id do arquivo                        # tipo handshake = id do arquivo, tipo dados = tamanho payload
         h6 = h6.to_bytes(1, 'big')
         h7 = numeroPacote                            # pacote solicitado quando tem erro

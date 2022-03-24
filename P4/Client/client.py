@@ -7,13 +7,13 @@ import numpy as np
 import random
 import sys # para pegar o tamanho em bytes
 
-serialName = 'COM5'                  # Windows(variacao de)
+serialName = 'COM8'                  # Windows(variacao de)
 
 def main():
     try:
         #declaramos um objeto do tipo enlace com o nome "com". Essa é a camada inferior à aplicação. Observe que um parametro
         #para declarar esse objeto é o nome da porta.
-        com1 = enlace('COM5') #inicializa enlace
+        com1 = enlace('COM8') #inicializa enlace
         # Ativa comunicacao. Inicia os threads e a comunicação seiral 
         com1.enable()
         #endereço da imagem a ser transmitida
@@ -49,7 +49,7 @@ def main():
         h1, h2 = h1.to_bytes(1,'big'), h2.to_bytes(1, 'big')    # número total de pacotes no arquivos
         h3 = quantidade.to_bytes(1, 'big')  
                           # 
-        h4 = 1
+        h4 = 0
         print("aqui")
         h4 = h4.to_bytes(1, 'big')                            # número do pacote sendo enviado
         
@@ -97,6 +97,7 @@ def main():
                     HANDSHAKE = False
                     ATUALIZATIMER20 = True
                     CONT = 1
+                    com1.rx.clearBuffer()
 
             except:
                 pass
@@ -108,7 +109,8 @@ def main():
             fatiamentoInicial = 0
             fatiamentoFinal = 114
             h0 = tipo3
-            #h4 = int.from_bytes(h4, 'big')
+            h4 = 1
+            h4 = h4.to_bytes(1, 'big')
             while int.from_bytes(h4, 'big') <= int.from_bytes(h3, 'big'):
                 print(f"Numero do pacote: {int.from_bytes(h4, 'big')}")
                 print(f"Numero total: {int.from_bytes(h3, 'big')}")
@@ -149,18 +151,20 @@ def main():
                 rxBuffer, nRx = com1.getData(14, timer20)
                 print("fez o getData")
                 
-                tipo = rxBuffer[0]
-                print(f"Tipo: {tipo}")
-
-                if tipo == tipo4:
-                    logString  += f"{date.today()} {datetime.now().time()}/receb/{tipo4}/{len(txBuffer)}/CRC\n"
-                    print("Código de recebimento ok")
-                    CONT += 1
-                    h4 = int.from_bytes(h4, 'big')
-                    h4  += 1
-                    h4 = h4.to_bytes(1, 'big')
-                    fatiamentoInicial += 114
-                    fatiamentoFinal += 114
+                if rxBuffer != [-5]:
+                    tipo = rxBuffer[0]
+                    print(f"Tipo: {tipo}")
+    
+                    if tipo == tipo4:
+                        #print(f"Rxbuffer[4]: {rxBuffer[4]}. H4: {h4}")
+                        logString  += f"{date.today()} {datetime.now().time()}/receb/{tipo4}/{len(txBuffer)}/CRC\n"
+                        print("Código de recebimento ok")
+                        CONT += 1
+                        h4 = int.from_bytes(h4, 'big')
+                        h4  += 1
+                        h4 = h4.to_bytes(1, 'big')
+                        fatiamentoInicial += 114
+                        fatiamentoFinal += 114
 
                 elif rxBuffer == [-5]: # se o return for [-5], t > 5s
                     logString  += f"{date.today()} {datetime.now().time()}/envio/{tipo3}/{len(txBuffer)}/{int.from_bytes(h4, 'big')}/{int.from_bytes(h3, 'big')}/CRC\n"
