@@ -13,7 +13,7 @@ def main():
 
          #endereço da imagem a ser salva
         imageW = "./img/recebidaCopia.jpg"
-        log = "./log/Server2.txt"
+        log = "./log/Server5.txt"
         bytesImagem = []
         logString = ""
         codigoOk = 2
@@ -82,7 +82,8 @@ def main():
         com1.sendData(np.asarray(txBuffer)) #dados as np.array
         logString  += f"{date.today()} {datetime.now().time()}/envio/{tipo2}/{len(txBuffer)}/{int.from_bytes(h4, 'big')}/{int.from_bytes(h3, 'big')}/CRC\n"
         ATUALIZATIMER20 = True
-        SUCESSO = False            
+        SUCESSO = False 
+        ERRO4 = False           
         while GET:
             bytesGetData = 114
             print("-------------LOOP-----------")
@@ -96,10 +97,6 @@ def main():
                 logString  += f"{date.today()} {datetime.now().time()}/receb/{tipo3}/{len(rxBuffer)}/{rxBufferHeader[4]}/{rxBufferHeader[3]}/CRC\n"
                 numeroPacote = rxBufferHeader[4]
                 print("msg t3 recebida")
-                #print(f"Num. Pacote: {numeroPacote}, Total informado: {totalPacotes}")
-
-                    #print(int.from_bytes(rxBufferHeader[2:4], 'big'))
-                # if int.from_bytes(rxBufferHeader[2:4], 'big') == totalPacotes:
                 if numeroPacote == totalPacotes:
                     print("ultimo pacote aqui")
                     # bytesGetData = int.from_bytes(rxBufferHeader[6:8],'big')
@@ -108,8 +105,7 @@ def main():
                 rxBufferPayLoad, nRx = com1.getData(bytesGetData, timer20) 
                 time.sleep(0.5) #era 1 s
                 eop, nRx = com1.getData(4, timer20)
-                time.sleep(0.05)
-                eop= int.from_bytes(eop, 'big')
+                eop = int.from_bytes(eop, 'big')
                 print(f"EOP: {eop}")
                 #tipo = int.from_bytes(rxBuffer[0], 'big')
                 # numeroPacoteRecebido = int.from_bytes(rxBufferHeader[4], 'big')
@@ -117,7 +113,13 @@ def main():
                 # totalPacotesRecebido = int.from_bytes(rxBufferHeader[3], 'big')
                 print(f"Número pacote recebido: {numeroPacoteRecebido}. Numero pacote esperado: {(totalPacotesRecebido+1)}")
                 
-                
+                if ERRO4 and numeroPacoteRecebido == 7: 
+                    print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+                    print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+                    print("------Forçando erro 4----.\n")
+                    print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+                    print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+                    break
                 # nominalSize = int.from_bytes(rxBufferHeader[5], 'big')
                 nominalSize = rxBufferHeader[5]
                 realSize = len(rxBufferPayLoad)
@@ -141,7 +143,6 @@ def main():
                 else:
                     print("Payload correto")
                 
-
                 if numeroPacoteRecebido == (totalPacotesRecebido+1):
                     print("pckg ok")
                     if eop == 2864434397:
@@ -149,7 +150,6 @@ def main():
                         print("Avisando o client que está ok")
                         print("-----------------------------\n")
                         ATUALIZATIMER20 = True
-                        #timer20 = time.time()
                         bytesImagem.append(rxBufferPayLoad)
                         totalPacotesRecebido += 1
 
@@ -178,9 +178,7 @@ def main():
                     print(f"Pedindo reenvio. Esperado era {esperado} Tamanho em bytes: {len(txBuffer)}")
                     com1.sendData(np.asarray(txBuffer)) #dados as np.array
                     logString  += f"{date.today()} {datetime.now().time()}/envio/{tipo6}/{len(txBuffer)}/{int.from_bytes(h4, 'big')}/{int.from_bytes(h3, 'big')}/CRC\n"
-                    #time.sleep(0.01)
-                    # totalPacotes += 1
-                    # totalPacotesRecebido += 1
+
                     
                     if numeroPacoteRecebido == totalPacotes:
                         print("\n\n------------FINALIZANDO---------------")
@@ -228,10 +226,10 @@ def main():
             #Fecha arquivo de imagem
             f.close()
             print("\n\n SUCESSO NA TRANSMISSÃO!")
-            f = open(log, 'w')
-            f.write(logString)
-            #Fecha arquivo de texto
-            f.close()
+        f = open(log, 'w')
+        f.write(logString)
+        #Fecha arquivo de texto
+        f.close()
     
         # Encerra comunicação
         print("-------------------------")
