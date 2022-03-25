@@ -18,7 +18,7 @@ def main():
         com1.enable()
         #endereço da imagem a ser transmitida
         imageR = "img\smallImage2.jpg" #"C:\Users\lorra\OneDrive\Área de Trabalho\22.1\Camada\Projeto 2\camada-fisica-da-computacao-22.1\P4\Client\img\smallImage1.png"
-        log = "./log/Client1.txt" 
+        log = "./log/Client3.txt" 
         logString = ""
         print("Carregando imagem para transmissão: ")
         print("-{}".format(imageR))
@@ -76,6 +76,7 @@ def main():
 
         
         CONT = None
+        inicio = time.time() 
         while HANDSHAKE:
             print("handshake")
             tentarNovamente = None
@@ -83,7 +84,7 @@ def main():
             print("Solicitando conexão com o server .... ")
             com1.sendData(np.asarray(txBuffer)) #dados as np.array
             time.sleep(5)
-            logString  = f"{date.today()} {datetime.now().time()}/envio/{tipo1}/{len(txBuffer)}\n"
+            logString  += f"{date.today()} {datetime.now().time()}/envio/{tipo1}/{len(txBuffer)}\n"
             print(logString)
             print("esperando resposta") 
             timer20 = time.time()
@@ -101,6 +102,10 @@ def main():
 
             except:
                 pass
+            # if time.time() - inicio > 20:
+                
+            #     break
+
                 
         if not FIM:
 
@@ -111,6 +116,10 @@ def main():
             h0 = tipo3
             h4 = 1
             h4 = h4.to_bytes(1, 'big')
+
+            # h4 = int.from_bytes(h3, 'big')
+            # h4 += 1
+            # h4 = h4.to_bytes(1,'big')
             while int.from_bytes(h4, 'big') <= int.from_bytes(h3, 'big'):
                 print(f"Numero do pacote: {int.from_bytes(h4, 'big')}")
                 print(f"Numero total: {int.from_bytes(h3, 'big')}")
@@ -157,7 +166,7 @@ def main():
     
                     if tipo == tipo4:
                         #print(f"Rxbuffer[4]: {rxBuffer[4]}. H4: {h4}")
-                        logString  += f"{date.today()} {datetime.now().time()}/receb/{tipo4}/{len(txBuffer)}/CRC\n"
+                        logString  += f"{date.today()} {datetime.now().time()}/receb/{tipo4}/{len(rxBuffer)}/CRC\n"
                         print("Código de recebimento ok")
                         CONT += 1
                         h4 = int.from_bytes(h4, 'big')

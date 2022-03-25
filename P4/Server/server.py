@@ -1,4 +1,6 @@
 from email import header
+
+from sympy import numer
 from enlace import *
 import time
 import numpy as np
@@ -11,7 +13,7 @@ def main():
 
          #endereço da imagem a ser salva
         imageW = "./img/recebidaCopia.jpg"
-        log = "./log/Server1.txt"
+        log = "./log/Server2.txt"
         bytesImagem = []
         logString = ""
         codigoOk = 2
@@ -76,7 +78,7 @@ def main():
         EOP = [b'\xAA', b'\xBB', b'\xCC', b'\xDD']
         pacote = HEAD + EOP
         txBuffer = b''.join(pacote)
-        print(f"Enviando pacote de conferencia: {txBuffer}. Seu tamanho é {len(txBuffer)}")
+        print(f"Enviando pacote de conferencia: {txBuffer}.")
         com1.sendData(np.asarray(txBuffer)) #dados as np.array
         logString  += f"{date.today()} {datetime.now().time()}/envio/{tipo2}/{len(txBuffer)}/{int.from_bytes(h4, 'big')}/{int.from_bytes(h3, 'big')}/CRC\n"
         ATUALIZATIMER20 = True
@@ -138,8 +140,7 @@ def main():
                         GET = False
                 else:
                     print("Payload correto")
-                    
-
+                
 
                 if numeroPacoteRecebido == (totalPacotesRecebido+1):
                     print("pckg ok")
