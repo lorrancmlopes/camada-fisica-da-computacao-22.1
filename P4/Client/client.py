@@ -1,4 +1,3 @@
-
 from enlace import *
 from math import ceil
 import time
@@ -6,14 +5,18 @@ from datetime import date, datetime
 import numpy as np
 import random
 import sys # para pegar o tamanho em bytes
+from crccheck.crc import Crc16, CrcXmodem
+from crccheck.checksum import ChecksumXor16
 
-serialName = 'COM8'                  # Windows(variacao de)
+
+
+serialName = 'COM5'                  # Windows(variacao de)
 
 def main():
     try:
         #declaramos um objeto do tipo enlace com o nome "com". Essa é a camada inferior à aplicação. Observe que um parametro
         #para declarar esse objeto é o nome da porta.
-        com1 = enlace('COM8') #inicializa enlace
+        com1 = enlace('COM5') #inicializa enlace
         # Ativa comunicacao. Inicia os threads e a comunicação seiral 
         com1.enable()
         #endereço da imagem a ser transmitida
@@ -50,7 +53,7 @@ def main():
         h3 = quantidade.to_bytes(1, 'big')  
                           # 
         h4 = 0
-        print("aqui")
+        
         h4 = h4.to_bytes(1, 'big')                            # número do pacote sendo enviado
         
         h5 = 13 # id do arquivo ( estamos montando o handshake)
@@ -69,7 +72,6 @@ def main():
         HEAD = [h0, h1, h2, h3, h4, h5, h6, h7, h8, h9]
         pacoteHandshake = HEAD + EOP
         print('pacote handshake')
-        print(pacoteHandshake)
 
         pacoteHandshake=b''.join(pacoteHandshake)
         txBuffer = pacoteHandshake
@@ -108,6 +110,7 @@ def main():
                 
         if not FIM:
             ERRO_ORDEM = False
+            ERRO_CRC = True
             fatiamentoInicial = 0
             fatiamentoFinal = 114
             h0 = tipo3
@@ -138,12 +141,20 @@ def main():
                 else:
                     PAYLOAD = data[fatiamentoInicial:fatiamentoFinal]
                     h5 = len(PAYLOAD).to_bytes(1, 'big') # h5 passa a ser tamanho do payload
-                    print(f"len data: {len(data)}, fatiamento: {fatiamentoInicial}/ {fatiamentoFinal} ")
+                    #print(f"len data: {len(data)}, fatiamento: {fatiamentoInicial}/ {fatiamentoFinal} ")
                 # fatiamentoInicial += 114
                 # fatiamentoFinal += 114
                 h0 = tipo3.to_bytes(1, 'big')
                 #h4 = h4.to_bytes(1, 'big')
                 HEAD = [h0, h1, h2, h3, h4, h5, h6, h7, h8, h9]
+                print(f"HEAD: {HEAD}")
+                print("testandooo")
+                print(f"Calc do CRC16: {Crc16.calc(PAYLOAD)}")
+                crc = Crc16.calc(PAYLOAD)
+                print(f"CRC: {crc}")
+                print(f"CRC16 em bytes: {crc.to_bytes(2,'big')}")
+                HEAD = HEAD[:8] + [crc.to_bytes(2,'big')]
+                print(HEAD)
                 
                 # Situação 2
                 if ERRO_ORDEM and int.from_bytes(h4, 'big') == 7:
@@ -154,25 +165,36 @@ def main():
                     print("Forçando erro na ordem dos pckgs")
                     print("--------------------------------")
                     HEAD = [h0, h1, h2, h3, h4Erro, h5, h6, h7, h8, h9]
+
+                #forçar erro crc
+                if ERRO_CRC and int.from_bytes(h4, 'big') == 8:
+                    crc = 2022
+                    ERRO_CRC = False
+                    print("--------------------------------")
+                    print("Forçando erro no CRC")
+                    print("--------------------------------")
+                    HEAD[8:] = [crc.to_bytes(2, 'big')]
+
                 
                 PAYLOAD = [PAYLOAD]
                 pacote = HEAD + PAYLOAD + EOP
                 txBuffer = b''.join(pacote)
-                print("##################################")
-                print(f'tamanho pacote len(txbuffer): {len(txBuffer)}')
+                print("\n ##################################")
+                #print(f'tamanho pacote len(txbuffer): {len(txBuffer)}')
                 print(f"Tipo da msg a ser enviada: tipo{txBuffer[0]}")
                 
-                
+                print(f"CRC {crc}\n")
                 com1.sendData(np.asarray(txBuffer)) #dados as np.array
-                logString  += f"{date.today()} {datetime.now().time()}/envio/{tipo3}/{len(txBuffer)}/{int.from_bytes(h4, 'big')}/{int.from_bytes(h3, 'big')}/CRC\n"
+                logString  += f"{date.today()} {datetime.now().time()}/envio/{tipo3}/{len(txBuffer)}/{int.from_bytes(h4, 'big')}/{int.from_bytes(h3, 'big')}/CRC {crc}\n"
                 print("envia msg cont - msg t3")
+                print(f"logString: {logString}")
                 #timer2 = time.time() #set timer 2 (COLOCAR DENTRO DO enlaceTX)
                 #Conferência de dados para envio do próximo pacote:
                 print("Conferindo..")
                 if ATUALIZATIMER20:
                     timer20 = time.time()
                 rxBuffer, nRx = com1.getData(14, timer20)
-                print("fez o getData")
+                #print("fez o getData")
                 
                 if rxBuffer != [-5] and rxBuffer != [-7]:
                     tipo = rxBuffer[0]

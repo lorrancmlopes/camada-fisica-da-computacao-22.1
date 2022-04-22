@@ -1,19 +1,18 @@
-from email import header
-
-from sympy import numer
 from enlace import *
 import time
 import numpy as np
 from datetime import datetime, date
+from crccheck.crc import Crc16, CrcXmodem
 
-serialName = "COM5"    
+serialName = "COM9"    
 
 def main():
     try:
 
-         #endereço da imagem a ser salva
+         
+        #endereço da imagem a ser salva
         imageW = "./img/recebidaCopia.jpg"
-        log = "./log/Server5.txt"
+        log = "./log/ServerCRC.txt"
         bytesImagem = []
         logString = ""
         codigoOk = 2
@@ -27,7 +26,7 @@ def main():
         arquivo = []
         ocioso = True
         totalPacotesRecebido = 0
-        com1 = enlace('COM5') #inicializa enlace
+        com1 = enlace('COM9') #inicializa enlace
         # Ativa comunicacao. Inicia os threads e a comunicação seiral 
         com1.enable()
         print("Esperando handshake")
@@ -80,10 +79,10 @@ def main():
         txBuffer = b''.join(pacote)
         print(f"Enviando pacote de conferencia: {txBuffer}.")
         com1.sendData(np.asarray(txBuffer)) #dados as np.array
-        logString  += f"{date.today()} {datetime.now().time()}/envio/{tipo2}/{len(txBuffer)}/{int.from_bytes(h4, 'big')}/{int.from_bytes(h3, 'big')}/CRC\n"
+        logString  += f"{date.today()} {datetime.now().time()}/envio/{tipo2}/{len(txBuffer)}/{int.from_bytes(h4, 'big')}/{int.from_bytes(h3, 'big')}/CRC \n"
         ATUALIZATIMER20 = True
         SUCESSO = False 
-        ERRO4 = False           
+        ERRO4 = False    
         while GET:
             bytesGetData = 114
             print("-------------LOOP-----------")
@@ -94,7 +93,7 @@ def main():
             print(f"Tipo da msg recebida: tipo {rxBufferHeader[0]}")
             
             if rxBufferHeader[0] == tipo3:
-                logString  += f"{date.today()} {datetime.now().time()}/receb/{tipo3}/{len(rxBuffer)}/{rxBufferHeader[4]}/{rxBufferHeader[3]}/CRC\n"
+                logString  += f"{date.today()} {datetime.now().time()}/receb/{tipo3}/{len(rxBuffer)}/{rxBufferHeader[4]}/{rxBufferHeader[3]}/CRC  {rxBufferHeader[8:]}\n"
                 numeroPacote = rxBufferHeader[4]
                 print("msg t3 recebida")
                 if numeroPacote == totalPacotes:
@@ -147,23 +146,32 @@ def main():
                     print("pckg ok")
                     if eop == 2864434397:
                         print("EOP no lugar correto.")
-                        print("Avisando o client que está ok")
-                        print("-----------------------------\n")
-                        ATUALIZATIMER20 = True
-                        bytesImagem.append(rxBufferPayLoad)
-                        totalPacotesRecebido += 1
+                        crc = rxBufferHeader[8:]
+                        crc = int.from_bytes(crc, 'big')
+                        print(f"O do header é {crc}")
+                        print(f"O esperado era {Crc16.calc(rxBufferPayLoad)}")
+                        if crc == Crc16.calc(rxBufferPayLoad):
+                            print("\n-----------------------------")
+                            print("CRC ok")
+                            print("-----------------------------\n")
+                            ATUALIZATIMER20 = True
+                            bytesImagem.append(rxBufferPayLoad)
+                            totalPacotesRecebido += 1
 
-                        tamanhoPayload = 0
-                        HEAD = [tipo4.to_bytes(1,'big'), h1, h2, totalPacotesRecebido.to_bytes(1, 'big'), numeroPacote.to_bytes(1,'big'), tamanhoPayload.to_bytes(1,'big'),h6,h7,h8,h9]
-                        pacote = HEAD + EOP
-                        txBuffer=b''.join(pacote)
-                        #print(f"Pacote dizendo 'Recebimento OK': {txBuffer}. Tamanho em bytes: {len(txBuffer)}")
-                        com1.sendData(np.asarray(txBuffer)) #dados as np.array
-                        logString  += f"{date.today()} {datetime.now().time()}/envio/{tipo4}/{len(txBuffer)}/{int.from_bytes(h4, 'big')}/{int.from_bytes(h3, 'big')}/CRC\n"
-                        if numeroPacoteRecebido == totalPacotes:
-                            print("\n\n------------FINALIZANDO---------------")
-                            GET = False
-                            SUCESSO = True
+                            tamanhoPayload = 0
+                            HEAD = [tipo4.to_bytes(1,'big'), h1, h2, totalPacotesRecebido.to_bytes(1, 'big'), numeroPacote.to_bytes(1,'big'), tamanhoPayload.to_bytes(1,'big'),h6,h7,h8,h9]
+                            pacote = HEAD + EOP
+                            txBuffer=b''.join(pacote)
+                            #print(f"Pacote dizendo 'Recebimento OK': {txBuffer}. Tamanho em bytes: {len(txBuffer)}")
+                            com1.sendData(np.asarray(txBuffer)) #dados as np.array
+                            logString  += f"{date.today()} {datetime.now().time()}/envio/{tipo4}/{len(txBuffer)}/{rxBufferHeader[4]}/{rxBufferHeader[3]}/CRC\n"
+                            if numeroPacoteRecebido == totalPacotes:
+                                print("\n\n------------FINALIZANDO---------------")
+                                GET = False
+                                SUCESSO = True
+                        else: 
+                            print("CRC não confere :(")
+                            break
 
                 else:
                     ATUALIZATIMER20 = False
@@ -177,7 +185,7 @@ def main():
                     txBuffer=b''.join(pacote)
                     print(f"Pedindo reenvio. Esperado era {esperado} Tamanho em bytes: {len(txBuffer)}")
                     com1.sendData(np.asarray(txBuffer)) #dados as np.array
-                    logString  += f"{date.today()} {datetime.now().time()}/envio/{tipo6}/{len(txBuffer)}/{int.from_bytes(h4, 'big')}/{int.from_bytes(h3, 'big')}/CRC\n"
+                    logString  += f"{date.today()} {datetime.now().time()}/envio/{tipo6}/{len(txBuffer)}/{rxBufferHeader[4]}/{rxBufferHeader[3]}/CRC\n"
 
                     
                     if numeroPacoteRecebido == totalPacotes:
@@ -203,7 +211,7 @@ def main():
                     print(f"Tamanho do payload: {txBuffer[5]}")
                     print(f"Enviando pacote de timed out 'tipo6' ... ")
                     com1.sendData(np.asarray(txBuffer)) #dados as np.array
-                    logString  += f"{date.today()} {datetime.now().time()}/envio/{tipo5}/{len(txBuffer)}/{int.from_bytes(h4, 'big')}/{int.from_bytes(h3, 'big')}/CRC\n"
+                    logString  += f"{date.today()} {datetime.now().time()}/envio/{tipo5}/{len(txBuffer)}/{txBuffer[4]}/{txBuffer[3]}/CRC\n"
                     time.sleep(0.01)
                     com1.disable()
                     break
@@ -215,7 +223,7 @@ def main():
                         pacote = HEAD + EOP
                         txBuffer=b''.join(pacote)
                         com1.sendData(np.asarray(txBuffer)) #dados as np.array
-                        logString  += f"{date.today()} {datetime.now().time()}/envio/{tipo4}/{len(txBuffer)}/{int.from_bytes(h4, 'big')}/{int.from_bytes(h3, 'big')}/CRC\n"
+                        logString  += f"{date.today()} {datetime.now().time()}/envio/{tipo4}/{len(txBuffer)}/{txBuffer[4]}/{txBuffer[3]}/CRC\n"
             #com1.rx.clearBuffer()             
                 
 
