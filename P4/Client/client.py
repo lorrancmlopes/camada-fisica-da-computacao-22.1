@@ -110,7 +110,7 @@ def main():
                 
         if not FIM:
             ERRO_ORDEM = False
-            ERRO_CRC = True
+            ERRO_CRC = False
             fatiamentoInicial = 0
             fatiamentoFinal = 114
             h0 = tipo3
