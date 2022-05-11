@@ -4,6 +4,11 @@ void setup(){
   pinMode(pino, OUTPUT);
 }
 
+int bitdoCaracter(int posicao){
+  int bits[8] = {0,1,1,1,0,0,1,1};
+  
+}
+
 void loop(){
   //start bit
   digitalWrite(pino, HIGH);
