@@ -9,7 +9,8 @@ from suaBibSignal import signalMeu
 import time
 import sounddevice as sd
 import numpy as np
-
+import matplotlib.pyplot as plt
+import peakutils
 
 
 def todB(s):
@@ -52,15 +53,18 @@ def main():
     #grave uma variavel com apenas a parte que interessa (dados)
     
     # use a funcao linspace e crie o vetor tempo. Um instante correspondente a cada amostra!
-    t = np.linspace(inicio,fim,numPontos)
+    T = 1/freqDeAmostragem
+    t = np.linspace(-T/2,T/2,numAmostras) # t   = np.linspace(-T/2,T/2,T*fs)
 
     # plot do gravico  áudio vs tempo!
    
-    
+    y = audio[:,0]
+    print(audio.shape)
     ## Calcula e exibe o Fourier do sinal audio. como saida tem-se a amplitude e as frequencias
-    xf, yf = signal.calcFFT(y, fs)
+    xf, yf = sinalMeu.calcFFT(y, fs)
     plt.figure("F(y)")
     plt.plot(xf,yf)
+    plt.xlim(0,1600)
     plt.grid()
     plt.title('Fourier audio')
     
@@ -70,9 +74,13 @@ def main():
     #voce deve tambem evitar que dois picos proximos sejam identificados, pois pequenas variacoes na
     #frequencia do sinal podem gerar mais de um pico, e na verdade tempos apenas 1.
    
-    index = peakutils.indexes(,,)
+    index = peakutils.peak.indexes(yf, thres=0.8, min_dist=1)
     
     #printe os picos encontrados! 
+    print(index, len(index))
+    for i in index:
+        print(xf[i])
+
     
     #encontre na tabela duas frequencias proximas às frequencias de pico encontradas e descubra qual foi a tecla
     #print a tecla.
