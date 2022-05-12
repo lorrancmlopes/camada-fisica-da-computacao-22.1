@@ -11,16 +11,16 @@ import numpy as np
 import random
 import sys # para pegar o tamanho em bytes
 
-serialName = 'COM5'                  # Windows(variacao de)
+serialName = 'COM4'                  # Windows(variacao de)
 
 
 
 def main():
     try:
-        #declaramos um objeto do tipo enlace com o nome "com". Essa é a camada inferior à aplicação. Observe que um parametro
+        #declaramos um objeto do h0 enlace com o nome "com". Essa é a camada inferior à aplicação. Observe que um parametro
         #para declarar esse objeto é o nome da porta.
         
-        com1 = enlace('COM5') #inicializa enlace
+        com1 = enlace('COM4') #inicializa enlace
         # Ativa comunicacao. Inicia os threads e a comunicação seiral 
         com1.enable()
 
@@ -36,7 +36,7 @@ def main():
         quantidade +=1 # um pacote a mais para o handshake
         
         #contrução do head
-        h1, h2, h3, h4, h5, h6, h7, h8, h9 = None, None, None, None, None, None, None, None, None, None
+        h0,h1, h2, h3, h4, h5, h6, h7, h8, h9 = None, None, None, None, None, None, None, None, None, None
         EOP = [b'\xAA', b'\xBB', b'\xCC', b'\xDD']
         recebimentoOK = 2
         recebimentoOK = recebimentoOK.to_bytes(2,'big')
@@ -47,22 +47,22 @@ def main():
         HANDSHAKE = True
         FIM = False
         h0  = 0
-        h0 = tipo.to_bytes(1, 'big')                            # tipo de mensagem
+        h0 = h0.to_bytes(1, 'big')                            # h0 de mensagem
         h1, h2 = 1, 1                                           # livre
         h1, h2 = h1.to_bytes(1,'big'), h2.to_bytes(1, 'big')    # número total de pacotes no arquivos
         h3 = quantidade.to_bytes(1, 'big')                      # 
         h4 = h4.to_bytes('1', 'big')                            # número do pacote sendo enviado
-        h5 = h5.to_bytes('1', 'big')                            # tipo handshake = id do arquivo, tipo dados = tamanho payload
+        h5 = h5.to_bytes('1', 'big')                            # h0 handshake = id do arquivo, h0 dados = tamanho payload
         h6 = h6.to_bytes('1', 'big')                            # pacote solicitado quando tem erro
         h7 = h7.to_bytes('1', 'big')                            # último pacote recebido com sucesso
         h8 = h8.to_bytes('1', 'big')                            # CRC
         h9 = h9.to_bytes('1', 'big')                            # CRC
        
-        PAYLOAD = None
+        PAYLOAD = 0
 
         #print(f"tamanho payload: {tamanhoPayload}")
         EOP = [b'\xAA', b'\xBB', b'\xCC', b'\xDD']
-        HEAD = [h1, h2, h3, h4, h5, h6, h7, h8, h9]
+        HEAD = [h0,h1, h2, h3, h4, h5, h6, h7, h8, h9]
         pacoteHandshake = HEAD + PAYLOAD + EOP
         #print('pacote handshake')
         #print(pacoteHandshake)
@@ -73,7 +73,7 @@ def main():
         
         
         while HANDSHAKE:
-            tentarNovamente = None
+            tentarNovamente = 0
             # Transmite dados
             print("Solicitando conexão com o server .... ")
             print(int.from_bytes(txBuffer[:1], 'big'))
@@ -128,7 +128,7 @@ def main():
 
                 fatiamentoInicial += 114
                 fatiamentoFinal += 114
-                HEAD = [h1, h2, h3, h4, h5, h6, h7, h8, h9]
+                HEAD = [h0, h1, h2, h3, h4, h5, h6, h7, h8, h9]
                 pacote = HEAD + PAYLOAD + EOP
                 
                 # Transmite pacote
@@ -146,11 +146,11 @@ def main():
                 
                 rxBuffer, nRx = com1.getData(14)
                 time.sleep(0.03)
-                tipo = rxBuffer[:1]
-                print(f"Tipo: {int.from_bytes(tipo, 'big')}; Recebimento ok: {int.from_bytes(recebimentoOK, 'big')} \n")
-                if tipo == recebimentoOK:
+                h0 = rxBuffer[0]
+                print(f"Tipo: {int.from_bytes(h0, 'big')}; Recebimento ok: {int.from_bytes(recebimentoOK, 'big')} \n")
+                if h0 == recebimentoOK:
                     print("Código de recebimento ok")
-                elif tipo == pedidoReenvio:
+                elif h0 == pedidoReenvio:
                     print("Reenvio")
                     h3 = int.from_bytes(h3, 'big')
                     h3 += 1
