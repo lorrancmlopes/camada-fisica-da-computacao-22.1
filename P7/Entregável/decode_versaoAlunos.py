@@ -5,16 +5,19 @@
 
 
 #funcao para transformas intensidade acustica em dB
+import sys
 from suaBibSignal import signalMeu
 import time
 import sounddevice as sd
 import numpy as np
-
-
+import matplotlib.pyplot as plt
+import soundfile   as sf
+import wavio as wv
+from scipy.io import wavfile
+import scipy.io
 
 def todB(s):
     sdB = 10*np.log10(s)
-
     return(sdB)
 
 
@@ -29,7 +32,7 @@ def main():
     
     sd.default.samplerate =  44100 
     sd.default.channels = 2  #voce pode ter que alterar isso dependendo da sua placa
-    duration = 4  #tempo em segundos que ira aquisitar o sinal acustico captado pelo mic
+    duration = 2  #tempo em segundos que ira aquisitar o sinal acustico captado pelo mic
 
 
     # faca um printo na tela dizendo que a captacao comecará em n segundos. e entao 
@@ -50,27 +53,45 @@ def main():
     #analise sua variavel "audio". pode ser um vetor com 1 ou 2 colunas, lista ...
     print(f"Audio: {audio}")
     #grave uma variavel com apenas a parte que interessa (dados)
-    
+
+    samplerate, dados = wavfile.read("C:/Users/lidia/4 SEM/camada/P7/camada-fisica-da-computacao-22.1/P7/Entregável/gravacao.wav")
+    plt.plot(dados)
+    plt.grid()
+
     # use a funcao linspace e crie o vetor tempo. Um instante correspondente a cada amostra!
-    t = np.linspace(inicio,fim,numPontos)
+    
+    t = np.linspace(0, 5, numAmostras)
 
     # plot do gravico  áudio vs tempo!
-   
+    plt.plot(t, dados, '.-')
+    plt.xlim(0, 0.005)
+    plt.ylabel("Som recebido e gravado")
+    plt.xlabel("t")
     
     ## Calcula e exibe o Fourier do sinal audio. como saida tem-se a amplitude e as frequencias
-    xf, yf = signal.calcFFT(y, fs)
+    xf, yf = sinalMeu.calcFFT(dados[:30], fs)
     plt.figure("F(y)")
     plt.plot(xf,yf)
     plt.grid()
     plt.title('Fourier audio')
     
+    plt.figure()
+    plt.stem(xf,np.abs(yf))
+    #plt.xlim(-1.6e3, 1.6e3)
+    # Exibe gráficos
+    plt.show()
+    # aguarda fim do audio
+    sd.wait()
+    # construa o gráfico do sinal emitido e o gráfico da transformada de Fourier. Cuidado. Como as frequencias sao relativamente altas,
+    #  voce deve plotar apenas alguns pontos (alguns periodos) para conseguirmos ver o sinal
+    sinalMeu.plotFFT(dados, fs)
 
     #esta funcao analisa o fourier e encontra os picos
     #voce deve aprender a usa-la. ha como ajustar a sensibilidade, ou seja, o que é um pico?
     #voce deve tambem evitar que dois picos proximos sejam identificados, pois pequenas variacoes na
     #frequencia do sinal podem gerar mais de um pico, e na verdade tempos apenas 1.
    
-    index = peakutils.indexes(,,)
+    # index = peakutils.indexes(,,)
     
     #printe os picos encontrados! 
     
