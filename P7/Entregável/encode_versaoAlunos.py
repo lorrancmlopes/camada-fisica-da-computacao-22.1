@@ -7,9 +7,9 @@ from suaBibSignal import *
 import numpy as np
 import sounddevice as sd
 import matplotlib.pyplot as plt
-
-
-
+import wavio as wv
+from scipy.io import wavfile
+import scipy.io
 
 frequenciaPorNumero = {
     1:[1206, 697],
@@ -76,7 +76,6 @@ def main():
     except ValueError:
         it_is = False
     
-    
     # agora, voce tem que gerar, por alguns segundos, suficiente para a outra aplicação gravar o audio, 
     # duas senoides com as frequencias corresposndentes à tecla pressionada, segundo a tabela DTMF
     print("Gerando Tons base")
@@ -85,12 +84,15 @@ def main():
     T = 5 #segundos
     fs = 44100
     t   = np.linspace(-T/2,T/2,T*fs)
-        # essas senoides tem que ter taxa de amostragem de 44100 amostras por segundo, 
+    
+    # essas senoides tem que ter taxa de amostragem de 44100 amostras por segundo, 
+    
     x1, s1 = meuSinal.generateSin(frequenciaPorNumero[numero][0], Amplitude, 5, fs)
     x2, s2 = meuSinal.generateSin(frequenciaPorNumero[numero][1], Amplitude, 5, fs)
+    
     # some as senoides. A soma será o sinal a ser emitido.
     som = s1 + s2
-        # entao voce tera que gerar uma lista de tempo correspondente a isso
+     # entao voce tera que gerar uma lista de tempo correspondente a isso
     
 
     # utilize a funcao da biblioteca sounddevice para reproduzir o som. Entenda seus argumento.
@@ -101,25 +103,36 @@ def main():
     sd.wait()
 
     # construa o gráfico do sinal emitido
-    print(som)
-    print(len(som))
-    plt.plot(t, som, '.-')
-    plt.xlim(0, 0.005)
-    plt.ylabel("Soma dos sons")
-    plt.xlabel("t")
+    # plt.plot(t, som, '.-')
+    # plt.xlim(0, 0.005)
+    # plt.ylabel("Soma dos sons")
+    # plt.xlabel("t")
+    
+    # print(som)
+    # wv.write("C:/Users/lidia/4 SEM/camada/P7/camada-fisica-da-computacao-22.1/P7/Entregável/gravacaoX.wav", som, fs,sampwidth=1)
+    # wavfile.write("C:/Users/lidia/4 SEM/camada/P7/camada-fisica-da-computacao-22.1/P7/Entregável/gravacaoX.wav", rate = fs, data = np.asarray(som)) 
+    # print(len(som))
+    
     # e o gráfico da transformada de Fourier
-    X, Y = meuSinal.calcFFT(som[:30], fs)
+    xf, yf = meuSinal.calcFFT(som, fs)
 
-    plt.figure()
-    plt.stem(X,np.abs(Y))
     #plt.xlim(-1.6e3, 1.6e3)
     # Exibe gráficos
-    plt.show()
     # aguarda fim do audio
     sd.wait()
     # construa o gráfico do sinal emitido e o gráfico da transformada de Fourier. Cuidado. Como as frequencias sao relativamente altas,
     #  voce deve plotar apenas alguns pontos (alguns periodos) para conseguirmos ver o sinal
-    meuSinal.plotFFT(som, fs)
+    figure, axis = plt.subplots(2)
+    axis[0].plot(t, som, '.-')
+    axis[0].set_xlim(0, 0.005)
+
+    axis[0].title.set_text('Soma das frequências pelo tempo')
+
+    axis[1].plot(xf,np.abs(yf))
+    axis[1].set_xlim(0,1600)
+    axis[1].grid()
+    axis[1].title.set_text('Fourier')
+    plt.show()
     
 
 if __name__ == "__main__":
