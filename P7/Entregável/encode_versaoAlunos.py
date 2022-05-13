@@ -132,6 +132,7 @@ def main():
     axis[1].set_xlim(0,1600)
     axis[1].grid()
     axis[1].title.set_text('Fourier')
+    plt.tight_layout()
     plt.show()
     
 

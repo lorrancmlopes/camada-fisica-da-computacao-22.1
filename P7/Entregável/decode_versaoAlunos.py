@@ -54,8 +54,20 @@ def main():
 
     # faca um printo na tela dizendo que a captacao comecará em n segundos. e entao 
     #use um time.sleep para a espera
-    print(f"A captura de som começará em {duration} segundos!")
-    time.sleep(duration)
+
+
+    # print(f"A captura de som começará em {duration} segundos!")
+    # time.sleep(duration)
+    
+    def countdown(num_of_secs):
+        while num_of_secs:
+            s = num_of_secs
+            min_sec_format = 'A captura de som começará em {:02d} segundos'.format(s)
+            print(min_sec_format, end='\n')
+            time.sleep(1)
+            num_of_secs -= 1
+    countdown(duration)
+    # print('Countdown finished.')
    
     #faca um print informando que a gravacao foi inicializada
     print("Começou!")
@@ -117,13 +129,14 @@ def main():
     figure, axis = plt.subplots(2)
     axis[0].plot(t,y)
     axis[0].title.set_text('Audio Recebido no tempo')
-    axis[0].set_ylim(-0.1, 0.1)
-    axis[0].set_xlim(0.5, 0.505)
+    # axis[0].set_ylim(-0.1, 0.1)
+    # axis[0].set_xlim(0.5, 0.505)
 
     axis[1].plot(xf,yf)
     axis[1].set_xlim(0,1600)
     axis[1].grid()
     axis[1].title.set_text('Fourier Audio Recebido')
+    plt.tight_layout()
     plt.show()
 
 if __name__ == "__main__":
