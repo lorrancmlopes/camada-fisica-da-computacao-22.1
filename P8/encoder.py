@@ -1,13 +1,10 @@
-from turtle import shape
 from suaBibSignal import signalMeu
 import time
 import sounddevice as sd
 import numpy as np
 import matplotlib.pyplot as plt
-import peakutils
 from funcoes_LPF import filtro
 from scipy.io.wavfile import write
-import wave as wv
 import soundfile as sf
 
     # function to normalize array
@@ -16,11 +13,10 @@ def normalize(item):
     return (item)/(np.max(np.abs(item)))
 
 
-def main():
+def encoder():
+    print("_____________ D E C O D E R _____________\n\n")
     # 1. Faça a leitura de um arquivo de áudio .wav de poucos segundos (entre 2 e 5) 
     #    previamente gravado com uma taxa de amostragem de 44100 Hz.
-
-
 
         #declare um objeto da classe da sua biblioteca de apoio (cedida)
     meuSinal = signalMeu() 
@@ -31,33 +27,39 @@ def main():
     
     sd.default.samplerate =  44100 
     sd.default.channels = 1  #voce pode ter que alterar isso dependendo da sua placa
-    duration = 3  #tempo em segundos que ira aquisitar o sinal acustico captado pelo mic
-
-
-        # faca um printo na tela dizendo que a captacao comecará em n segundos. e entao 
+    duration = 5  #tempo em segundos que ira aquisitar o sinal acustico captado pelo mic
+        # faca um print na tela dizendo que a captacao comecará em n segundos. e entao 
         #use um time.sleep para a espera
-    def countdown(num_of_secs):
-        while num_of_secs:
-            s = num_of_secs
-            min_sec_format = 'A captura de som começará em {:02d} segundos'.format(s)
-            print(min_sec_format, end='\n')
-            time.sleep(1)
-            num_of_secs -= 1
-    countdown(duration)
-    # print('Countdown finished.')
-   
-    #faca um print informando que a gravacao foi inicializada
-    print("Começou!")
-        #declare uma variavel "duracao" com a duracao em segundos da gravacao. poucos segundos ... 
-        #calcule o numero de amostras "numAmostras" que serao feitas (numero de aquisicoes)
+
+
     numAmostras = fs*duration#duvida
     freqDeAmostragem = fs
-    audio = sd.rec(int(numAmostras), freqDeAmostragem, channels=1)
-    sd.wait()
-    print("...     FIM")
+    modoAudio = input("Você deseja usar o meme ou gravar um aúdio? \n Digite 1 para 'meme' ou 2 para gravar agora: ")
+    if modoAudio == '1':
+        memePath = 'meme.wav'
+        audio, samplerate = sf.read(memePath)
+
+    
+    else:
+        def countdown(num_of_secs):
+            while num_of_secs:
+                s = num_of_secs
+                min_sec_format = 'A captura de som começará em {:02d} segundos'.format(s)
+                print(min_sec_format, end='\r')
+                time.sleep(1)
+                num_of_secs -= 1
+        countdown(duration)
+        #faca um print informando que a gravacao foi inicializada
+        print("\Começou!")
+            #declare uma variavel "duracao" com a duracao em segundos da gravacao. poucos segundos ... 
+            #calcule o numero de amostras "numAmostras" que serao feitas (numero de aquisicoes)
+        
+        audio = sd.rec(int(numAmostras), freqDeAmostragem, channels=1)
+        sd.wait()
+        print("...     FIM")
     
         #analise sua variavel "audio". pode ser um vetor com 1 ou 2 colunas, lista ...
-    #print(f"Audio: {audio}")
+    print(f"Audio: {audio}")
     #grave uma variavel com apenas a parte que interessa (dados)
     y = audio[:,0]
      # 2. Filtre e elimine as frequências acima de 2500 Hz.
@@ -82,7 +84,7 @@ def main():
 
     print("Gerando senoide portadora")
     Amplitude = 1
-    T = 3 #segundos
+    T = 5 #segundos
     fs = 44100
         # essa senoide tem que ter taxa de amostragem de 44100 amostras por segundo
     freqPortadora = 13000 # 13000 Hz
@@ -131,11 +133,7 @@ def main():
     #criando arquivo de áudio
     sf.write('ModularizadoNormalizado.wav', sinalModuladoNormalizado, fs)
 
-
-
-
-
-main()
+encoder()
 
 
     
