@@ -6,8 +6,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import peakutils
 from funcoes_LPF import filtro
-
-
+from scipy.io.wavfile import write
+import wave as wv
+import soundfile as sf
 
     # function to normalize array
 def normalize(item):
@@ -49,7 +50,7 @@ def main():
     print("Começou!")
         #declare uma variavel "duracao" com a duracao em segundos da gravacao. poucos segundos ... 
         #calcule o numero de amostras "numAmostras" que serao feitas (numero de aquisicoes)
-    numAmostras = fs*duration*2
+    numAmostras = fs*duration#duvida
     freqDeAmostragem = fs
     audio = sd.rec(int(numAmostras), freqDeAmostragem, channels=1)
     sd.wait()
@@ -86,7 +87,7 @@ def main():
         # essa senoide tem que ter taxa de amostragem de 44100 amostras por segundo
     freqPortadora = 13000 # 13000 Hz
     x1, sPortadora = meuSinal.generateSin(freqPortadora, Amplitude, T, fs)
-    sinalModulado = sPortadora*yf
+    sinalModulado = sPortadora*audioFiltrado
     print("Sinal Modulado:")
     # print(sinalModulado)
     # print(type(sinalModulado))
@@ -125,6 +126,10 @@ def main():
     plt.tight_layout()
     plt.show()
 
+    #wv.write(r"C:\Users\lorra\OneDrive\Área de Trabalho\22.1\Camada\Projeto 2\camada-fisica-da-computacao-22.1\P8\recording\gravacaoX1.wav", sinalModuladoNormalizado, fs,sampwidth=1)
+    write(r"C:\Users\lorra\OneDrive\Área de Trabalho\22.1\Camada\Projeto 2\camada-fisica-da-computacao-22.1\P8\recording\gravacaoX2.wav", rate = fs, data = np.int16(sinalModuladoNormalizado))
+    #criando arquivo de áudio
+    sf.write('ModularizadoNormalizado.wav', sinalModuladoNormalizado, fs)
 
 
 
